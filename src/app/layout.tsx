@@ -2,6 +2,8 @@ import "@/styles/globals.css";
 
 import { Inter } from "next/font/google";
 import { TRPCReactProvider } from "@/trpc/react";
+import Navbar from "./_components/Navbar/Navbar";
+
 
 const inter = Inter({
   subsets: ["latin"],
@@ -19,10 +21,19 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+
+
   return (
     <html lang='en'>
       <body className={`font-sans ${inter.variable}`}>
-        <TRPCReactProvider>{children}</TRPCReactProvider>
+        <TRPCReactProvider>
+          {
+            <main className=' min-h-screen w-full bg-muted/40'>
+              <Navbar />
+              <div className="sm:ml-20 ">{children}</div>
+            </main>
+          }
+        </TRPCReactProvider>
       </body>
     </html>
   );
