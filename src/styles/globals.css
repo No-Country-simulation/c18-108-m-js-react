@@ -74,6 +74,7 @@
     @apply bg-background text-foreground;
   }
 
+  /* =========== Typography =========== */
   h1,
   .h1 {
     @apply text-2xl font-bold md:text-4xl;
@@ -98,4 +99,5 @@
   .p {
     @apply text-sm md:text-base;
   }
+  /* =========== Typography =========== */
 }

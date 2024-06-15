@@ -6,9 +6,9 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
-
-import { getServerAuthSession } from "@/server/auth";
 import { db } from "@/server/db";
+import { clerkClient } from "@clerk/clerk-sdk-node";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
@@ -26,11 +26,52 @@ import { ZodError } from "zod";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-  const session = await getServerAuthSession();
+  const user = await currentUser();
+
+  const userId = user?.id;
+
+  let userDb = undefined;
+  if (userId) {
+    try {
+      const response = await clerkClient.users.getUser(userId);
+      const { imageUrl, firstName, lastName, emailAddresses } = response;
+
+      userDb = await db.user.findUnique({
+        where: { clerkId: userId },
+      });
+
+      if (!userDb) {
+        userDb = await db.user.create({
+          data: {
+            clerkId: userId,
+            email: emailAddresses[0]?.emailAddress ?? "",
+            firstName: firstName ?? "",
+            lastName: lastName ?? "",
+            imageUrl: imageUrl ?? "",
+          },
+        });
+        console.log("Usuario creado en la base de datos");
+      } else {
+        console.log("Usuario existe en la base de datos");
+        userDb = await db.user.findUnique({
+          where: { clerkId: userId },
+        });
+      }
+    } catch (error) {
+      console.error("Error creando o buscando en la base de datos", error);
+      throw error;
+    }
+  }
 
   return {
     db,
-    session,
+    auth: auth(),
+    currentUser: {
+      ...user,
+      id: userDb?.id,
+      role: userDb?.role,
+      clerkId: userId,
+    },
     ...opts,
   };
 };
@@ -86,22 +127,14 @@ export const createTRPCRouter = t.router;
  */
 export const publicProcedure = t.procedure;
 
-/**
- * Protected (authenticated) procedure
- *
- * If you want a query or mutation to ONLY be accessible to logged in users, use this. It verifies
- * the session is valid and guarantees `ctx.session.user` is not null.
- *
- * @see https://trpc.io/docs/procedures
- */
 export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
-  if (!ctx.session || !ctx.session.user) {
+  if (!ctx.auth.userId) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   return next({
     ctx: {
       // infers the `session` as non-nullable
-      session: { ...ctx.session, user: ctx.session.user },
+      auth: ctx.auth,
     },
   });
 });

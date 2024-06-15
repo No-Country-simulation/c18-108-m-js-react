@@ -1,5 +1,5 @@
-/** @type {import('prettier').Config & import('prettier-plugin-tailwindcss').PluginOptions} */
-const config = {
+/** @type {import('prettier').Config} */
+module.exports = {
   semi: true,
   singleQuote: false,
   tabWidth: 2,
@@ -33,5 +33,3 @@ const config = {
   tailwindFunctions: ["clsx"],
   importOrderTypeScriptVersion: "5.0.0",
 };
-
-export default config;

@@ -1,0 +1,34 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/universal",
+  "hostRequirements": {
+    "cpus": 4
+  },
+  "waitFor": "onCreateCommand",
+  "updateContentCommand": "pnpm install && pnpm build",
+  "postCreateCommand": "",
+  "postAttachCommand": {
+    "server": "pnpm dev"
+  },
+  "customizations": {
+    "codespaces": {
+      "openFiles": ["src/app/page.tsx"]
+    },
+    "vscode": {
+      "extensions": [
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "Prisma.prisma",
+        "ms-vscode.vscode-typescript-next",
+        "AbianS.prisma-generate-uml",
+        "bradlc.vscode-tailwindcss"
+      ]
+    }
+  },
+  "portsAttributes": {
+    "3000": {
+      "label": "Application",
+      "onAutoForward": "openPreview"
+    }
+  },
+  "forwardPorts": [3000]
+}
