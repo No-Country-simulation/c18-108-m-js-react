@@ -10,32 +10,30 @@ export const postRouter = createTRPCRouter({
     .input(z.object({ text: z.string() }))
     .query(({ input }) => {
       return {
-        greeting: `Hello ${input.text}`,
+        greeting: `Bienvenido ${input.text}`,
       };
     }),
 
-  create: protectedProcedure
-    .input(z.object({ name: z.string().min(1) }))
+  createPost: protectedProcedure
+    .input(z.object({ title: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      // simulate a slow db call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      return ctx.db.post.create({
+      if (!ctx.currentUser.id) {
+        throw new Error("No user found");
+      }
+      const newPost = await ctx.db.post.create({
         data: {
-          name: input.name,
-          createdBy: { connect: { id: ctx.session.user.id } },
+          title: input.title,
+          userId: ctx.currentUser.id,
         },
       });
+
+      return newPost;
     }),
 
-  getLatest: protectedProcedure.query(({ ctx }) => {
-    return ctx.db.post.findFirst({
-      orderBy: { createdAt: "desc" },
-      where: { createdBy: { id: ctx.session.user.id } },
+  getLatestPosts: protectedProcedure.query(({ ctx }) => {
+    const posts = ctx.db.post.findMany({
+      where: { userId: ctx.currentUser.id },
     });
-  }),
-
-  getSecretMessage: protectedProcedure.query(() => {
-    return "you can now see this secret message!";
+    return posts;
   }),
 });
